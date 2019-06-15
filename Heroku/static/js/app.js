@@ -1,50 +1,104 @@
+
+console.log("Is anyone awake in here?");
+
 function buildMetadata(sample) {
-  console.log("Build metadata"); 
+    console.log("Build metadata"); 
+  
+    // @TODO: Complete the following function that builds the metadata panel
+  
+    //Where to pull data
+    var selector = d3.select("#selDataset");
+    var numSample = selector.property("value");
 
-  // @TODO: Complete the following function that builds the metadata panel
+    console.log(numSample);
 
-  // Use `d3.json` to fetch the metadata for a sample
-  var url = `/metadata/${sample}`;
-    d3.json(url).then(function(response) {
-      console.log(response);
+
+    // Use `d3.json` to fetch the metadata for a sample
+      var urlmeta = `/metadata/${sample}`;
+            
+        d3.json(urlmeta).then(function(response) {
+          console.log(response);
+
+  // Use d3 to select the panel with id of `#sample-metadata`
+      var panelBody = d3.select("#sample-metadata");
+
+  //Clear any existing metadata
+panelBody.html("");
+  
+//Putting metadata onto webpage
+Object.entries(response).forEach(function([key, value]){
+  console.log(key, value);
+
+  var rows = panelBody.append("div");
+    rows.text(`${key}: ${value}`)
+    });
   });
-
-  // //Promise Pending
-  //   const dataPromise = d3.json(url);
-  //     console.log("Data Promise: ", dataPromise);
-
-
-
-
-
-
-    // Use d3 to select the panel with id of `#sample-metadata`
-
-    // Use `.html("") to clear any existing metadata
-
-    // Use `Object.entries` to add each key and value pair to the panel
-    // Hint: Inside the loop, you will need to use d3 to append new
-    // tags for each key-value in the metadata.
-
-    // BONUS: Build the Gauge Chart
-    // buildGauge(data.WFREQ);
 }
+
+ //TODO: Build a pie chart
 
 function buildCharts(sample) {
-  console.log("Build new chart");
+    console.log("Build new chart");
+  //Bubble Chart
 
-  // @TODO: Use `d3.json` to fetch the sample data for the plots
+  var selector = d3.select("#selDataset");
+  var sampleNum = selector.property("value");
+  var sampleURL = `/samples/${sampleNum}`;
 
-    // @TODO: Build a Bubble Chart using the sample data
+  d3.json(sampleURL).then(function(response){
+    console.log("getting data...");
 
-    // @TODO: Build a Pie Chart
-    // HINT: You will need to use slice() to grab the top 10 sample_values,
-    // otu_ids, and labels (10 each).
+    var sample_values = response.sample_values.slice(0,10);
+    var otu_ids = response.otu_ids.slice(0,10);
+    var otu_labels = response.otu_labels.slice(0,10);
+
+    var trace = {
+      mode: "markers",
+      text: otu_labels,
+      x: otu_ids,
+      y: sample_values,
+      marker: {
+        size: sample_values,
+        color: otu_ids
+      }
+    };
+
+    var data = [trace];
+
+    var layout = {
+      xaxis:{
+      type: "linear"
+    },
+      yaxis:{
+      autorange: true,
+      type: "linear"
+    }
+  };
+
+  Plotly.newPlot("bubble", data, layout);
+
+    //PIE CHART TRACE
+
+    var trace2 = {
+      type: "pie",
+      labels: otu_ids,
+      values: sample_values,
+      hovertext: otu_labels
+    };
+
+    var data2 = [trace2];
+
+  Plotly.newPlot('pie', data2);
+  });
 }
 
-function init() {
-  // Grab a reference to the dropdown select element
-  var selector = d3.select("#selDataset");
+
+
+//Init functions
+
+ function init() {
+  //Grab a reference to the dropdown select element
+     var selector = d3.select("#selDataset");
 
   // Use the list of sample names to populate the select options
   d3.json("/names").then((sampleNames) => {
@@ -55,18 +109,17 @@ function init() {
         .property("value", sample);
     });
 
+
     // Use the first sample from the list to build the initial plots
     const firstSample = sampleNames[0];
-    buildCharts(firstSample);
-    buildMetadata(firstSample);
+     buildCharts(firstSample);
+     buildMetadata(firstSample);
   });
 }
-
-function optionChanged(newSample) {
-  // Fetch new data each time a new sample is selected
-  buildCharts(newSample);
-  buildMetadata(newSample);
+  
+  function optionChanged(newSample){
+    //Fetch new data eah time a new sample is selected
+    buildCharts(newSample);
+    buildMetadata(newSample)
 }
-
-// Initialize the dashboard
-init();
+init()
